@@ -76,11 +76,16 @@ cli-wrapped --no-ai --static
 
 ### Navigation (Interactive Mode)
 
-| Key                     | Action          |
-| ----------------------- | --------------- |
-| `SPACE` / `→` / `ENTER` | Next screen     |
-| `←` / `BACKSPACE`       | Previous screen |
-| `q`                     | Quit            |
+| Key                     | Action                              |
+| ----------------------- | ----------------------------------- |
+| `SPACE` / `→` / `ENTER` | Next screen                         |
+| `←` / `BACKSPACE`       | Previous screen                     |
+| `s`                     | Save share image (on summary screen)|
+| `q`                     | Quit                                |
+
+### Share Your Stats
+
+On the final summary screen, press `s` to generate a shareable PNG image. The image is saved to your Downloads folder and is perfect for sharing on social media.
 
 ## AI-Powered Roasts
 

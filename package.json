@@ -44,10 +44,12 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@resvg/resvg-js": "^2.6.2",
     "ink": "^6.5.1",
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",
     "ink-use-stdout-dimensions": "^1.0.5",
-    "react": "^19.2.3"
+    "react": "^19.2.3",
+    "satori": "^0.18.3"
   }
 }

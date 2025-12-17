@@ -15,7 +15,7 @@
 
 ## Quick Start
 
-Run directly (installs [Bun](https://bun.sh/) if needed):
+Run directly (requires [Bun](https://bun.sh/) - will prompt to install if missing):
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/kmelve/cli-wrapped/main/install.sh)

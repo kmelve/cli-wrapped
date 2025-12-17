@@ -20,15 +20,31 @@ echo ""
 
 # Check for Bun
 if ! command -v bun &> /dev/null; then
-    echo -e "${YELLOW}Bun not found. Installing Bun...${NC}"
-    curl -fsSL https://bun.sh/install | bash
-
-    # Source the updated PATH
-    export BUN_INSTALL="$HOME/.bun"
-    export PATH="$BUN_INSTALL/bin:$PATH"
-
-    echo -e "${GREEN}Bun installed!${NC}"
+    echo -e "${YELLOW}Bun is required but not installed.${NC}"
     echo ""
+    echo "Bun is a fast JavaScript runtime (https://bun.sh)"
+    echo ""
+    read -p "Would you like to install Bun? [y/N] " -n 1 -r
+    echo ""
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${GREEN}Installing Bun...${NC}"
+        curl -fsSL https://bun.sh/install | bash
+
+        # Source the updated PATH
+        export BUN_INSTALL="$HOME/.bun"
+        export PATH="$BUN_INSTALL/bin:$PATH"
+
+        echo -e "${GREEN}Bun installed!${NC}"
+        echo ""
+    else
+        echo ""
+        echo "To install Bun manually, run:"
+        echo "  curl -fsSL https://bun.sh/install | bash"
+        echo ""
+        echo "Then run this installer again."
+        exit 1
+    fi
 fi
 
 # Download/update CLI Wrapped

@@ -1,9 +1,15 @@
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
-import { homedir } from "os";
+import { homedir, platform } from "os";
+import { execSync } from "child_process";
 import type { AnalysisResult } from "../types/index.ts";
+
+export interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+}
 
 // Load a basic font for rendering
 async function loadFont(): Promise<ArrayBuffer> {
@@ -208,12 +214,30 @@ function ShareCard({ analysis, year, headline, shell }: ShareCardProps) {
   );
 }
 
+/**
+ * Copy image to clipboard on macOS
+ */
+function copyImageToClipboard(filepath: string): boolean {
+  if (platform() !== "darwin") {
+    return false;
+  }
+
+  try {
+    // Use osascript to copy PNG to clipboard on macOS
+    const script = `set the clipboard to (read (POSIX file "${filepath}") as «class PNGf»)`;
+    execSync(`osascript -e '${script}'`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function generateShareImage(
   analysis: AnalysisResult,
   year: number,
   shell: string,
   headline?: string
-): Promise<string> {
+): Promise<ShareResult> {
   const font = await loadFont();
 
   const svg = await satori(
@@ -253,10 +277,17 @@ export async function generateShareImage(
 
   // Save to Downloads folder
   const downloadsDir = join(homedir(), "Downloads");
+  if (!existsSync(downloadsDir)) {
+    mkdirSync(downloadsDir, { recursive: true });
+  }
+
   const filename = `cli-wrapped-${year}.png`;
   const filepath = join(downloadsDir, filename);
 
   writeFileSync(filepath, pngBuffer);
 
-  return filepath;
+  // Try to copy to clipboard
+  const copiedToClipboard = copyImageToClipboard(filepath);
+
+  return { filepath, copiedToClipboard };
 }

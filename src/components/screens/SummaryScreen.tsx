@@ -15,7 +15,7 @@ export function SummaryScreen({ analysis, year, shell, headline, overallRoast }:
   const topCmd = analysis.topCommands[0];
   const topPM = analysis.packageManagers[0];
   const [shareStatus, setShareStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
-  const [savedPath, setSavedPath] = useState<string>("");
+  const [shareResult, setShareResult] = useState<{ filepath: string; copiedToClipboard: boolean } | null>(null);
 
   useInput((input) => {
     if ((input === "s" || input === "S") && shareStatus === "idle") {
@@ -23,11 +23,12 @@ export function SummaryScreen({ analysis, year, shell, headline, overallRoast }:
       // Dynamic import to avoid loading heavy WASM deps at startup
       import("../../share/generateImage.tsx")
         .then(({ generateShareImage }) => generateShareImage(analysis, year, shell, headline))
-        .then((path) => {
-          setSavedPath(path);
+        .then((result) => {
+          setShareResult(result);
           setShareStatus("done");
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error(err);
           setShareStatus("error");
         });
     }
@@ -120,10 +121,19 @@ export function SummaryScreen({ analysis, year, shell, headline, overallRoast }:
           </Text>
         </Box>
       )}
-      {shareStatus === "done" && (
-        <Box marginBottom={1} justifyContent="center">
-          <Text color="green">
-            ✓ Saved to {savedPath}
+      {shareStatus === "done" && shareResult && (
+        <Box marginBottom={1} flexDirection="column" alignItems="center">
+          {shareResult.copiedToClipboard ? (
+            <Text color="green">
+              ✓ Copied to clipboard! Ready to paste.
+            </Text>
+          ) : (
+            <Text color="green">
+              ✓ Image saved!
+            </Text>
+          )}
+          <Text dimColor>
+            {shareResult.filepath}
           </Text>
         </Box>
       )}

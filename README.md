@@ -2,7 +2,7 @@
 
 Spotify Wrapped, but for your command line. Analyzes your shell history and generates fun statistics with optional AI-powered roasts.
 
-![CLI Wrapped Demo](https://github.com/user-attachments/assets/demo.gif)
+![CLI Wrapped 2025 stats. The 'cd' Wanderer Award - For Someone Who Clearly Doesn't Know Where They Are. 8,847 total commands, 2,884 unique. Top command: pnpm (1,341 times). Peak activity: 13:00 on Tuesdays. Favorite package manager: pnpm. Git: 349 commits, 230 pushes, 216 pulls. Shell: zsh.](./example.png)
 
 ## Features
 
@@ -119,6 +119,12 @@ When you run CLI Wrapped, you'll be asked if you want AI-powered roasts.
 
 ### Setup
 
+**Option 1: Paste when prompted**
+
+When you run CLI Wrapped and choose AI roasts, you'll be prompted to enter your API key. You can paste it directly into the terminal - the key is kept in memory only and never written to disk.
+
+**Option 2: Environment variable**
+
 ```bash
 # Get a key at https://console.anthropic.com/
 export ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
@@ -127,7 +133,7 @@ export ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
 echo 'export ANTHROPIC_API_KEY=sk-ant-api03-xxxxx' >> ~/.zshrc
 ```
 
-Or skip the consent prompt:
+**Option 3: Skip the prompt**
 
 ```bash
 cli-wrapped --ai      # Enable AI directly

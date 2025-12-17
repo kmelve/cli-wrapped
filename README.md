@@ -1,6 +1,6 @@
 # CLI Wrapped
 
-Spotify Wrapped, but for your command line. Analyzes your shell history and generates fun statistics with optional AI-powered roasts.
+[Spotify Wrapped](https://www.spotify.com/wrapped/), but for your command line. Analyzes your shell history and generates fun statistics with optional AI-powered roasts from [Claude](https://www.anthropic.com/claude).
 
 ![CLI Wrapped 2025 stats. The 'cd' Wanderer Award - For Someone Who Clearly Doesn't Know Where They Are. 8,847 total commands, 2,884 unique. Top command: pnpm (1,341 times). Peak activity: 13:00 on Tuesdays. Favorite package manager: pnpm. Git: 349 commits, 230 pushes, 216 pulls. Shell: zsh.](./example.png)
 
@@ -10,12 +10,12 @@ Spotify Wrapped, but for your command line. Analyzes your shell history and gene
 - **Time Patterns** - When do you code? Hourly and daily breakdowns
 - **The Struggles** - Typos, rage-sudo moments, repeated failures
 - **Git Stats** - Commits, pushes, pulls, and your favorite git command
-- **Package Manager Loyalty** - npm vs yarn vs pnpm vs bun
-- **AI Roasts** - Optional witty commentary from Claude
+- **Package Manager Loyalty** - [npm](https://www.npmjs.com/) vs [yarn](https://yarnpkg.com/) vs [pnpm](https://pnpm.io/) vs [bun](https://bun.sh/)
+- **AI Roasts** - Optional witty commentary from [Claude](https://www.anthropic.com/claude)
 
 ## Quick Start
 
-Run directly (installs Bun if needed):
+Run directly (installs [Bun](https://bun.sh/) if needed):
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/kmelve/cli-wrapped/main/install.sh)
@@ -26,7 +26,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/kmelve/cli-wrapped/main/inst
 ### Option 1: Run from source
 
 ```bash
-# Install Bun if you haven't
+# Install Bun if you haven't (https://bun.sh)
 curl -fsSL https://bun.sh/install | bash
 
 # Clone and run
@@ -119,6 +119,8 @@ When you run CLI Wrapped, you'll be asked if you want AI-powered roasts.
 
 ### Setup
 
+Get an API key from the [Anthropic Console](https://console.anthropic.com/).
+
 **Option 1: Paste when prompted**
 
 When you run CLI Wrapped and choose AI roasts, you'll be prompted to enter your API key. You can paste it directly into the terminal - the key is kept in memory only and never written to disk.
@@ -126,7 +128,7 @@ When you run CLI Wrapped and choose AI roasts, you'll be prompted to enter your 
 **Option 2: Environment variable**
 
 ```bash
-# Get a key at https://console.anthropic.com/
+# Get a key at https://console.anthropic.com
 export ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
 
 # Add to ~/.zshrc for permanent use
@@ -146,9 +148,9 @@ Without an API key, the app works perfectly - you just won't get the roasts.
 
 | Shell  | Timestamps | History Location |
 | ------ | ---------- | ---------------- |
-| zsh    | ✅ Yes     | `~/.zsh_history` or `~/.zsh_sessions/` |
-| bash   | ⚠️ If configured | `~/.bash_history` |
-| fish   | ✅ Yes     | `~/.local/share/fish/fish_history` |
+| [zsh](https://www.zsh.org/)    | ✅ Yes     | `~/.zsh_history` or `~/.zsh_sessions/` |
+| [bash](https://www.gnu.org/software/bash/)   | ⚠️ If configured | `~/.bash_history` |
+| [fish](https://fishshell.com/)   | ✅ Yes     | `~/.local/share/fish/fish_history` |
 
 CLI Wrapped auto-detects your shell and finds the appropriate history file.
 
@@ -212,14 +214,19 @@ Note: This only works if your history has timestamps.
 
 ## Tech Stack
 
-- **TypeScript** - Type-safe development
-- **React + Ink** - Terminal UI framework
-- **Bun** - Fast JavaScript runtime
-- **Anthropic SDK** - Claude API for roasts
+- [TypeScript](https://www.typescriptlang.org/) - Type-safe development
+- [React](https://react.dev/) + [Ink](https://github.com/vadimdemedes/ink) - Terminal UI framework
+- [Bun](https://bun.sh/) - Fast JavaScript runtime
+- [Anthropic SDK](https://docs.anthropic.com/en/api/client-sdks) - Claude API for roasts
+- [Satori](https://github.com/vercel/satori) - HTML/CSS to SVG for share images
+
+## Contributing
+
+Found a bug or have an idea? [Open an issue](https://github.com/kmelve/cli-wrapped/issues) or submit a PR!
 
 ## License
 
-MIT
+[MIT](LICENSE)
 
 ## Credits
 

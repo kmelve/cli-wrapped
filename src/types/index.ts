@@ -65,6 +65,11 @@ export interface PackageManagerStats {
   percentage: number;
 }
 
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 export interface AnalysisResult {
   totalCommands: number;
   uniqueCommands: number;
@@ -79,4 +84,5 @@ export interface AnalysisResult {
   packageManagers: PackageManagerStats[];
   longestCommandLength: number;
   mostActiveDate: { date: string; count: number } | null;
+  dateRange: DateRange | null;
 }

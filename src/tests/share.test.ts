@@ -45,6 +45,7 @@ function createMockAnalysis(): AnalysisResult {
     ],
     longestCommandLength: 150,
     mostActiveDate: { date: "2025-03-15", count: 250 },
+    dateRange: { from: new Date("2025-01-01"), to: new Date("2025-12-17") },
   };
 }
 

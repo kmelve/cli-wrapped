@@ -2,6 +2,7 @@ import React from "react";
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
 import type { AnalysisResult } from "../../types/index.ts";
+import { formatDateRange } from "../../analyzers/index.ts";
 
 interface ShareResult {
   filepath: string;
@@ -36,6 +37,11 @@ export function SummaryScreen({ analysis, year, shell, headline, overallRoast, s
         <Text bold color="blue">
           ╚═══════════════════════════════════════════════════════════════════╝
         </Text>
+        {analysis.dateRange && (
+          <Text dimColor>
+            📅 {formatDateRange(analysis.dateRange)}
+          </Text>
+        )}
       </Box>
 
       {/* Headline/Award */}

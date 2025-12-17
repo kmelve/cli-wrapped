@@ -5,6 +5,7 @@ import { join } from "path";
 import { homedir, platform } from "os";
 import { execSync } from "child_process";
 import type { AnalysisResult } from "../types/index.ts";
+import { formatDateRange } from "../analyzers/index.ts";
 
 export type ScreenType = "summary" | "commands" | "time" | "struggles" | "git" | "packages";
 
@@ -50,7 +51,7 @@ async function loadFont(): Promise<ArrayBuffer> {
 }
 
 // Common wrapper for all cards
-function CardWrapper({ children, year, title, emoji, roast }: { children: React.ReactNode; year: number; title: string; emoji: string; roast?: string }) {
+function CardWrapper({ children, year, title, emoji, roast, dateRange }: { children: React.ReactNode; year: number; title: string; emoji: string; roast?: string; dateRange?: string }) {
   return (
     <div
       style={{
@@ -71,6 +72,11 @@ function CardWrapper({ children, year, title, emoji, roast }: { children: React.
         <div style={{ display: "flex", fontSize: 28, color: "#f0c14b", marginTop: 8 }}>
           {`${emoji} ${title}`}
         </div>
+        {dateRange ? (
+          <div style={{ display: "flex", fontSize: 16, color: "#8b949e", marginTop: 4 }}>
+            {`📅 ${dateRange}`}
+          </div>
+        ) : null}
       </div>
       {children}
       {roast ? (
@@ -102,9 +108,10 @@ function CardWrapper({ children, year, title, emoji, roast }: { children: React.
 function TopCommandsCard({ analysis, year, roast }: { analysis: AnalysisResult; year: number; roast?: string }) {
   const maxCount = analysis.topCommands[0]?.count ?? 1;
   const top5 = analysis.topCommands.slice(0, 5);
+  const dateRange = analysis.dateRange ? formatDateRange(analysis.dateRange) : undefined;
 
   return (
-    <CardWrapper year={year} title="Your Top Commands" emoji="🏆" roast={roast}>
+    <CardWrapper year={year} title="Your Top Commands" emoji="🏆" roast={roast} dateRange={dateRange}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {top5.map((cmd, i) => {
           const barWidth = Math.round((cmd.count / maxCount) * 400);
@@ -136,9 +143,10 @@ function TopCommandsCard({ analysis, year, roast }: { analysis: AnalysisResult; 
 function TimeCard({ analysis, year, roast }: { analysis: AnalysisResult; year: number; roast?: string }) {
   const maxHour = Math.max(...analysis.timePatterns.map(t => t.count));
   const maxDay = Math.max(...analysis.dayPatterns.map(d => d.count));
+  const dateRange = analysis.dateRange ? formatDateRange(analysis.dateRange) : undefined;
 
   return (
-    <CardWrapper year={year} title="When You Code" emoji="🕐" roast={roast}>
+    <CardWrapper year={year} title="When You Code" emoji="🕐" roast={roast} dateRange={dateRange}>
       <div style={{ display: "flex", gap: 48 }}>
         <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
           <div style={{ display: "flex", fontSize: 18, color: "#8b949e", marginBottom: 12 }}>Hourly Activity</div>
@@ -187,9 +195,10 @@ function TimeCard({ analysis, year, roast }: { analysis: AnalysisResult; year: n
 // Struggles Card
 function StrugglesCard({ analysis, year, roast }: { analysis: AnalysisResult; year: number; roast?: string }) {
   const struggles = analysis.struggles.slice(0, 4);
+  const dateRange = analysis.dateRange ? formatDateRange(analysis.dateRange) : undefined;
 
   return (
-    <CardWrapper year={year} title="The Struggle Was Real" emoji="😅" roast={roast}>
+    <CardWrapper year={year} title="The Struggle Was Real" emoji="😅" roast={roast} dateRange={dateRange}>
       {struggles.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {struggles.map((s, i) => (
@@ -220,10 +229,11 @@ function StrugglesCard({ analysis, year, roast }: { analysis: AnalysisResult; ye
 // Git Stats Card
 function GitCard({ analysis, year, roast }: { analysis: AnalysisResult; year: number; roast?: string }) {
   const git = analysis.gitStats;
+  const dateRange = analysis.dateRange ? formatDateRange(analysis.dateRange) : undefined;
 
   if (!git) {
     return (
-      <CardWrapper year={year} title="Git Activity" emoji="🔀" roast={roast}>
+      <CardWrapper year={year} title="Git Activity" emoji="🔀" roast={roast} dateRange={dateRange}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}>
           <div style={{ display: "flex", fontSize: 24, color: "#f0c14b" }}>
             No git activity detected
@@ -234,7 +244,7 @@ function GitCard({ analysis, year, roast }: { analysis: AnalysisResult; year: nu
   }
 
   return (
-    <CardWrapper year={year} title="Git Activity" emoji="🔀" roast={roast}>
+    <CardWrapper year={year} title="Git Activity" emoji="🔀" roast={roast} dateRange={dateRange}>
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 32 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ display: "flex", fontSize: 48, fontWeight: 700, color: "#3fb950" }}>{git.totalCommits}</div>
@@ -267,9 +277,10 @@ function GitCard({ analysis, year, roast }: { analysis: AnalysisResult; year: nu
 function PackagesCard({ analysis, year, roast }: { analysis: AnalysisResult; year: number; roast?: string }) {
   const pms = analysis.packageManagers.slice(0, 5);
   const maxCount = pms[0]?.count ?? 1;
+  const dateRange = analysis.dateRange ? formatDateRange(analysis.dateRange) : undefined;
 
   return (
-    <CardWrapper year={year} title="Package Managers" emoji="📦" roast={roast}>
+    <CardWrapper year={year} title="Package Managers" emoji="📦" roast={roast} dateRange={dateRange}>
       {pms.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {pms.map((pm, i) => {
@@ -369,7 +380,7 @@ function SummaryCard({ analysis, year, headline, shell, roast }: { analysis: Ana
       ) : null}
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: "auto", borderTop: "1px solid #30363d", paddingTop: 24 }}>
         <div style={{ display: "flex", fontSize: 16, color: "#8b949e" }}>
-          {`${shell} shell • ${analysis.uniqueCommands.toLocaleString()} unique commands`}
+          {analysis.dateRange ? `📅 ${formatDateRange(analysis.dateRange)} • ` : ""}{`${shell} shell • ${analysis.uniqueCommands.toLocaleString()} unique`}
         </div>
         <div style={{ display: "flex", fontSize: 16, color: "#58a6ff" }}>github.com/kmelve/cli-wrapped</div>
       </div>

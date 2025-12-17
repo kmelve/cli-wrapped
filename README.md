@@ -155,33 +155,6 @@ Without an API key, the app works perfectly - you just won't get the roasts.
 - **Bun** - Fast JavaScript runtime
 - **Anthropic SDK** - Claude API for roasts
 
-## Sample Output
-
-```
-╔══════════════════════════════════════════════════════════════╗
-║                     CLI WRAPPED 2025                        ║
-╚══════════════════════════════════════════════════════════════╝
-
-You typed 8,823 commands this year.
-
-🏆 Your Top Commands
-
- 1. pnpm           ████████████████████ 1,341 (15.2%)
- 2. cd             ████████████░░░░░░░░   782 (8.9%)
- 3. git            ████████████░░░░░░░░   774 (8.8%)
-
-🕐 When You Code
-12AM        ░▒▒▓▓▓██▓▒░░      11PM
-Peak hour: 1 PM • Peak day: Tuesday
-
-😅 The Struggle Was Real
-• You mistyped "pnpm" 2 times
-• You forgot sudo 1 time and had to retry
-
-🤖 "You ran pnpm 1,341 times. At this point, it's not a package
-    manager, it's a lifestyle choice."
-```
-
 ## License
 
 MIT

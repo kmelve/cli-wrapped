@@ -9,24 +9,87 @@ import type { AnalysisResult } from "../types/index.ts";
 export interface ShareResult {
   filepath: string;
   copiedToClipboard: boolean;
+  altText: string;
 }
 
-// Load a basic font for rendering
+/**
+ * Generate alt text for accessibility
+ */
+function generateAltText(
+  analysis: AnalysisResult,
+  year: number,
+  shell: string,
+  headline?: string
+): string {
+  const parts: string[] = [];
+
+  parts.push(`CLI Wrapped ${year} stats.`);
+
+  if (headline) {
+    parts.push(headline + ".");
+  }
+
+  parts.push(`${analysis.totalCommands.toLocaleString()} total commands, ${analysis.uniqueCommands.toLocaleString()} unique.`);
+
+  const topCmd = analysis.topCommands[0];
+  if (topCmd) {
+    parts.push(`Top command: ${topCmd.command} (${topCmd.count.toLocaleString()} times).`);
+  }
+
+  parts.push(`Peak activity: ${analysis.peakHour}:00 on ${analysis.peakDay}s.`);
+
+  const topPM = analysis.packageManagers[0];
+  if (topPM) {
+    parts.push(`Favorite package manager: ${topPM.manager}.`);
+  }
+
+  if (analysis.gitStats) {
+    parts.push(`Git: ${analysis.gitStats.totalCommits} commits, ${analysis.gitStats.totalPushes} pushes, ${analysis.gitStats.totalPulls} pulls.`);
+  }
+
+  parts.push(`Shell: ${shell}.`);
+
+  return parts.join(" ");
+}
+
+// Load a monospace font for rendering
 async function loadFont(): Promise<ArrayBuffer> {
-  // Try to load Inter from Google Fonts CDN
+  // Try system fonts first (most reliable)
+  const systemFonts = [
+    "/System/Library/Fonts/Monaco.ttf", // macOS
+    "/System/Library/Fonts/SFMono-Regular.otf", // macOS newer
+    "/System/Library/Fonts/Menlo.ttc", // macOS
+    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", // Linux
+    "/usr/share/fonts/TTF/DejaVuSansMono.ttf", // Arch Linux
+    "C:\\Windows\\Fonts\\consola.ttf", // Windows
+  ];
+
+  for (const fontPath of systemFonts) {
+    try {
+      if (existsSync(fontPath)) {
+        const buffer = readFileSync(fontPath);
+        return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
+      }
+    } catch {
+      // Try next font
+    }
+  }
+
+  // Fallback: fetch from CDN
   try {
     const response = await fetch(
-      "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hjp-Ek-_0ew.woff"
+      "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.3/files/jetbrains-mono-latin-400-normal.woff"
     );
-    return await response.arrayBuffer();
-  } catch {
-    // Fallback: try system font on macOS
-    try {
-      const fontPath = "/System/Library/Fonts/Supplemental/Arial.ttf";
-      return readFileSync(fontPath).buffer as ArrayBuffer;
-    } catch {
-      throw new Error("Could not load font");
+    if (!response.ok) {
+      throw new Error(`Font fetch failed: ${response.status}`);
     }
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      throw new Error("Font URL returned HTML instead of font data");
+    }
+    return await response.arrayBuffer();
+  } catch (err) {
+    throw new Error(`Could not load any font: ${err}`);
   }
 }
 
@@ -37,9 +100,31 @@ interface ShareCardProps {
   shell: string;
 }
 
+function StatBox({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ display: "flex", fontSize: 16, color: "#8b949e" }}>{label}</div>
+      <div style={{ display: "flex", fontSize: 28, fontWeight: 600, color }}>{value}</div>
+    </div>
+  );
+}
+
 function ShareCard({ analysis, year, headline, shell }: ShareCardProps) {
   const topCmd = analysis.topCommands[0];
   const topPM = analysis.packageManagers[0];
+  const git = analysis.gitStats;
+
+  // Build stats array to avoid conditional rendering issues
+  const stats: Array<{ label: string; value: string; color: string }> = [];
+
+  if (topCmd) {
+    stats.push({ label: "Top Command", value: topCmd.command, color: "#f0c14b" });
+  }
+  stats.push({ label: "Peak Hour", value: `${analysis.peakHour}:00`, color: "#a371f7" });
+  stats.push({ label: "Peak Day", value: analysis.peakDay, color: "#a371f7" });
+  if (topPM) {
+    stats.push({ label: "Favorite PM", value: topPM.manager, color: "#58a6ff" });
+  }
 
   return (
     <div
@@ -50,55 +135,54 @@ function ShareCard({ analysis, year, headline, shell }: ShareCardProps) {
         height: "100%",
         backgroundColor: "#0d1117",
         color: "#e6edf3",
-        padding: "48px",
-        fontFamily: "Inter",
+        padding: 48,
+        fontFamily: "Mono",
       }}
     >
-      {/* Header */}
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          marginBottom: "32px",
+          marginBottom: 32,
         }}
       >
         <div
           style={{
-            fontSize: "48px",
+            display: "flex",
+            fontSize: 48,
             fontWeight: 700,
             color: "#58a6ff",
-            marginBottom: "8px",
+            marginBottom: headline ? 8 : 0,
           }}
         >
-          CLI WRAPPED {year}
+          {`CLI WRAPPED ${year}`}
         </div>
-        {headline && (
+        {headline ? (
           <div
             style={{
-              fontSize: "24px",
-              color: "#f0c14b",
               display: "flex",
-              alignItems: "center",
-              gap: "8px",
+              fontSize: 24,
+              color: "#f0c14b",
             }}
           >
-            🏆 {headline} 🏆
+            {headline}
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Main stat */}
       <div
         style={{
           display: "flex",
           justifyContent: "center",
-          marginBottom: "32px",
+          alignItems: "baseline",
+          marginBottom: 32,
         }}
       >
         <div
           style={{
-            fontSize: "64px",
+            display: "flex",
+            fontSize: 72,
             fontWeight: 700,
             color: "#3fb950",
           }}
@@ -107,106 +191,71 @@ function ShareCard({ analysis, year, headline, shell }: ShareCardProps) {
         </div>
         <div
           style={{
-            fontSize: "24px",
+            display: "flex",
+            fontSize: 24,
             color: "#8b949e",
-            marginLeft: "12px",
-            alignSelf: "flex-end",
-            marginBottom: "12px",
+            marginLeft: 12,
           }}
         >
           commands
         </div>
       </div>
 
-      {/* Stats grid */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-around",
-          marginBottom: "32px",
+          marginBottom: 32,
         }}
       >
-        {topCmd && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ fontSize: "16px", color: "#8b949e" }}>Top Command</div>
-            <div style={{ fontSize: "28px", fontWeight: 600, color: "#f0c14b" }}>
-              {topCmd.command}
-            </div>
-            <div style={{ fontSize: "14px", color: "#8b949e" }}>
-              {topCmd.count.toLocaleString()}x
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div style={{ fontSize: "16px", color: "#8b949e" }}>Peak Hour</div>
-          <div style={{ fontSize: "28px", fontWeight: 600, color: "#a371f7" }}>
-            {analysis.peakHour}:00
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div style={{ fontSize: "16px", color: "#8b949e" }}>Peak Day</div>
-          <div style={{ fontSize: "28px", fontWeight: 600, color: "#a371f7" }}>
-            {analysis.peakDay}
-          </div>
-        </div>
-
-        {topPM && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ fontSize: "16px", color: "#8b949e" }}>Favorite PM</div>
-            <div style={{ fontSize: "28px", fontWeight: 600, color: "#58a6ff" }}>
-              {topPM.manager}
-            </div>
-          </div>
-        )}
+        {stats.map((stat, i) => (
+          <StatBox key={i} label={stat.label} value={stat.value} color={stat.color} />
+        ))}
       </div>
 
-      {/* Git stats */}
-      {analysis.gitStats && (
+      {git ? (
         <div
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: "48px",
-            marginBottom: "32px",
+            gap: 48,
+            marginBottom: 32,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>📝</span>
-            <span style={{ fontSize: "20px", color: "#3fb950" }}>
-              {analysis.gitStats.totalCommits} commits
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", fontSize: 20 }}>📝</div>
+            <div style={{ display: "flex", fontSize: 20, color: "#3fb950" }}>
+              {`${git.totalCommits} commits`}
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>⬆️</span>
-            <span style={{ fontSize: "20px", color: "#58a6ff" }}>
-              {analysis.gitStats.totalPushes} pushes
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", fontSize: 20 }}>⬆️</div>
+            <div style={{ display: "flex", fontSize: 20, color: "#58a6ff" }}>
+              {`${git.totalPushes} pushes`}
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>⬇️</span>
-            <span style={{ fontSize: "20px", color: "#a371f7" }}>
-              {analysis.gitStats.totalPulls} pulls
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", fontSize: 20 }}>⬇️</div>
+            <div style={{ display: "flex", fontSize: 20, color: "#a371f7" }}>
+              {`${git.totalPulls} pulls`}
+            </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Footer */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           marginTop: "auto",
           borderTop: "1px solid #30363d",
-          paddingTop: "24px",
+          paddingTop: 24,
         }}
       >
-        <div style={{ fontSize: "16px", color: "#8b949e" }}>
-          Shell: {shell} • {analysis.uniqueCommands.toLocaleString()} unique commands
+        <div style={{ display: "flex", fontSize: 16, color: "#8b949e" }}>
+          {`${shell} shell • ${analysis.uniqueCommands.toLocaleString()} unique commands`}
         </div>
-        <div style={{ fontSize: "16px", color: "#58a6ff" }}>
+        <div style={{ display: "flex", fontSize: 16, color: "#58a6ff" }}>
           github.com/kmelve/cli-wrapped
         </div>
       </div>
@@ -247,19 +296,19 @@ export async function generateShareImage(
       height: 630,
       fonts: [
         {
-          name: "Inter",
+          name: "Mono",
           data: font,
           weight: 400,
           style: "normal",
         },
         {
-          name: "Inter",
+          name: "Mono",
           data: font,
           weight: 600,
           style: "normal",
         },
         {
-          name: "Inter",
+          name: "Mono",
           data: font,
           weight: 700,
           style: "normal",
@@ -289,5 +338,8 @@ export async function generateShareImage(
   // Try to copy to clipboard
   const copiedToClipboard = copyImageToClipboard(filepath);
 
-  return { filepath, copiedToClipboard };
+  // Generate alt text
+  const altText = generateAltText(analysis, year, shell, headline);
+
+  return { filepath, copiedToClipboard, altText };
 }

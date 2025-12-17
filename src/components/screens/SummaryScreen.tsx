@@ -15,7 +15,7 @@ export function SummaryScreen({ analysis, year, shell, headline, overallRoast }:
   const topCmd = analysis.topCommands[0];
   const topPM = analysis.packageManagers[0];
   const [shareStatus, setShareStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
-  const [shareResult, setShareResult] = useState<{ filepath: string; copiedToClipboard: boolean } | null>(null);
+  const [shareResult, setShareResult] = useState<{ filepath: string; copiedToClipboard: boolean; altText: string } | null>(null);
 
   useInput((input) => {
     if ((input === "s" || input === "S") && shareStatus === "idle") {
@@ -122,19 +122,29 @@ export function SummaryScreen({ analysis, year, shell, headline, overallRoast }:
         </Box>
       )}
       {shareStatus === "done" && shareResult && (
-        <Box marginBottom={1} flexDirection="column" alignItems="center">
-          {shareResult.copiedToClipboard ? (
-            <Text color="green">
-              ✓ Copied to clipboard! Ready to paste.
+        <Box marginBottom={1} flexDirection="column">
+          <Box justifyContent="center">
+            {shareResult.copiedToClipboard ? (
+              <Text color="green">
+                ✓ Image copied to clipboard! Ready to paste.
+              </Text>
+            ) : (
+              <Text color="green">
+                ✓ Image saved!
+              </Text>
+            )}
+          </Box>
+          <Box justifyContent="center">
+            <Text dimColor>
+              {shareResult.filepath}
             </Text>
-          ) : (
-            <Text color="green">
-              ✓ Image saved!
-            </Text>
-          )}
-          <Text dimColor>
-            {shareResult.filepath}
-          </Text>
+          </Box>
+          <Box marginTop={1} flexDirection="column">
+            <Text bold color="blue">Alt text for accessibility (copy this):</Text>
+            <Box borderStyle="round" borderColor="gray" paddingX={1} marginTop={1}>
+              <Text wrap="wrap">{shareResult.altText}</Text>
+            </Box>
+          </Box>
         </Box>
       )}
       {shareStatus === "error" && (

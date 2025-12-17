@@ -30,6 +30,7 @@
   "scripts": {
     "dev": "bun run src/index.tsx",
     "start": "bun run src/index.tsx",
+    "test": "bun test",
     "build": "bun build src/index.tsx --outdir dist --target node --format esm",
     "prepublishOnly": "bun run build",
     "typecheck": "tsc --noEmit"

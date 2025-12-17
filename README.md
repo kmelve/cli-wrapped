@@ -80,12 +80,12 @@ cli-wrapped --no-ai --static
 | ----------------------- | ----------------------------------- |
 | `SPACE` / `→` / `ENTER` | Next screen                         |
 | `←` / `BACKSPACE`       | Previous screen                     |
-| `s`                     | Save share image (on summary screen)|
+| `s`                     | Save share image for current screen |
 | `q`                     | Quit                                |
 
 ### Share Your Stats
 
-On the final summary screen, press `s` to generate a shareable PNG image. The image is saved to your Downloads folder and is perfect for sharing on social media.
+Press `s` on any screen to generate a shareable PNG image for that view. Each screen has its own card design - share your top commands, time patterns, git stats, or the full summary. Images are saved to your Downloads folder (and copied to clipboard on macOS).
 
 ## AI-Powered Roasts
 
@@ -144,9 +144,71 @@ Without an API key, the app works perfectly - you just won't get the roasts.
 
 ## Supported Shells
 
-- **zsh** - Full support with timestamps
-- **bash** - Basic support (timestamps if `HISTTIMEFORMAT` is set)
-- **fish** - Full support with timestamps
+| Shell  | Timestamps | History Location |
+| ------ | ---------- | ---------------- |
+| zsh    | ✅ Yes     | `~/.zsh_history` or `~/.zsh_sessions/` |
+| bash   | ⚠️ If configured | `~/.bash_history` |
+| fish   | ✅ Yes     | `~/.local/share/fish/fish_history` |
+
+CLI Wrapped auto-detects your shell and finds the appropriate history file.
+
+## FAQ
+
+### Why does it only show a few commands / today's history?
+
+This usually happens on macOS when using Terminal.app, which stores history in session files instead of a single history file.
+
+**CLI Wrapped automatically checks these locations:**
+1. `$HISTFILE` environment variable (if set)
+2. `~/.zsh_history` (standard location)
+3. `~/.zsh_sessions/*.history` (macOS Terminal.app session files)
+
+**To check your setup:**
+```bash
+# See where your history is stored
+echo $HISTFILE
+
+# Check if you have session-based history
+ls -la ~/.zsh_sessions/
+
+# Check your history settings
+echo "HISTSIZE=$HISTSIZE SAVEHIST=$SAVEHIST"
+```
+
+**To enable unified history** (recommended), add to `~/.zshrc`:
+```bash
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY        # Share history between sessions
+setopt INC_APPEND_HISTORY   # Write immediately, not on exit
+setopt HIST_IGNORE_DUPS     # Skip duplicates
+```
+
+Then restart your terminal. Future commands will be saved to `~/.zsh_history`.
+
+### Why are there no timestamps / everything shows as "this year"?
+
+Your shell might not be saving timestamps. For zsh, ensure extended history is enabled:
+
+```bash
+setopt EXTENDED_HISTORY
+```
+
+For bash, set the timestamp format:
+```bash
+export HISTTIMEFORMAT="%F %T "
+```
+
+### Can I analyze a different year?
+
+Yes! Use the `--year` flag:
+```bash
+cli-wrapped --year=2024
+cli-wrapped --year=2023
+```
+
+Note: This only works if your history has timestamps.
 
 ## Tech Stack
 

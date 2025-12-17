@@ -18,7 +18,7 @@ Spotify Wrapped, but for your command line. Analyzes your shell history and gene
 Run directly (installs Bun if needed):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kmelve/cli-wrapped/main/install.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/kmelve/cli-wrapped/main/install.sh)
 ```
 
 ## Installation

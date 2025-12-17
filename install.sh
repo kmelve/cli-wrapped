@@ -1,6 +1,6 @@
 #!/bin/bash
 # CLI Wrapped - Install and Run Script
-# Usage: curl -fsSL https://raw.githubusercontent.com/kmelve/cli-wrapped/main/install.sh | bash
+# Usage: bash <(curl -fsSL https://raw.githubusercontent.com/kmelve/cli-wrapped/main/install.sh)
 
 set -e
 
@@ -47,6 +47,6 @@ cd "$TEMP_DIR/cli-wrapped-main"
 echo -e "${GREEN}Installing dependencies...${NC}"
 bun install --silent
 
-# Run
+# Run with TTY
 echo ""
-bun run src/index.tsx "$@"
+exec bun run src/index.tsx "$@" </dev/tty

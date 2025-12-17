@@ -10,6 +10,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Install directory
+INSTALL_DIR="$HOME/.cli-wrapped"
+
 echo -e "${BLUE}╔═══════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║         CLI WRAPPED INSTALLER         ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════╝${NC}"
@@ -24,30 +27,44 @@ if ! command -v bun &> /dev/null; then
     export BUN_INSTALL="$HOME/.bun"
     export PATH="$BUN_INSTALL/bin:$PATH"
 
-    # Also try to source shell config
-    [ -f "$HOME/.bashrc" ] && source "$HOME/.bashrc" 2>/dev/null || true
-    [ -f "$HOME/.zshrc" ] && source "$HOME/.zshrc" 2>/dev/null || true
-
     echo -e "${GREEN}Bun installed!${NC}"
     echo ""
 fi
 
-# Create temp directory
-TEMP_DIR=$(mktemp -d)
-trap "rm -rf $TEMP_DIR" EXIT
+# Download/update CLI Wrapped
+if [ -d "$INSTALL_DIR" ]; then
+    echo -e "${GREEN}Updating CLI Wrapped...${NC}"
+    rm -rf "$INSTALL_DIR"
+fi
 
 echo -e "${GREEN}Downloading CLI Wrapped...${NC}"
+mkdir -p "$INSTALL_DIR"
+curl -fsSL https://github.com/kmelve/cli-wrapped/archive/refs/heads/main.tar.gz | tar -xz --strip-components=1 -C "$INSTALL_DIR"
 
-# Download and extract
-curl -fsSL https://github.com/kmelve/cli-wrapped/archive/refs/heads/main.tar.gz | tar -xz -C "$TEMP_DIR"
-
-cd "$TEMP_DIR/cli-wrapped-main"
+cd "$INSTALL_DIR"
 
 # Install dependencies
 echo -e "${GREEN}Installing dependencies...${NC}"
 bun install --silent
 
-# Run with TTY - reconnect stdin/stdout to terminal
 echo ""
-exec </dev/tty
+echo -e "${GREEN}Running CLI Wrapped...${NC}"
+echo -e "${BLUE}(Installed to ~/.cli-wrapped - run again anytime with: cd ~/.cli-wrapped && bun start)${NC}"
+echo ""
+
+# Create a runner script and execute it directly
+cat > /tmp/run-cli-wrapped.sh << 'RUNNER'
+#!/bin/bash
+cd "$HOME/.cli-wrapped"
 exec bun run src/index.tsx "$@"
+RUNNER
+chmod +x /tmp/run-cli-wrapped.sh
+
+# Use script command to create a proper PTY (works on both macOS and Linux)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    script -q /dev/null /tmp/run-cli-wrapped.sh "$@"
+else
+    # Linux
+    script -q -c "/tmp/run-cli-wrapped.sh $*" /dev/null
+fi

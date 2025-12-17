@@ -44,24 +44,6 @@ function isGitCommand(cmd: string): boolean {
   return firstWord in GIT_ALIASES;
 }
 
-/**
- * Extract commit messages from git commit commands
- */
-function extractCommitMessages(entries: HistoryEntry[]): string[] {
-  const messages: string[] = [];
-
-  for (const entry of entries) {
-    const cmd = entry.command.trim();
-
-    // Match git commit -m "message" or gcmsg "message"
-    const match = cmd.match(/(?:git\s+commit\s+-[^m]*m|gcmsg?)\s+["']([^"']+)["']/);
-    if (match?.[1]) {
-      messages.push(match[1]);
-    }
-  }
-
-  return messages;
-}
 
 /**
  * Analyze git usage
@@ -116,8 +98,6 @@ export function analyzeGitStats(entries: HistoryEntry[]): GitStats | null {
     }
   }
 
-  const commitMessages = extractCommitMessages(entries);
-
   return {
     totalCommits: commits,
     totalPushes: pushes,
@@ -127,6 +107,5 @@ export function analyzeGitStats(entries: HistoryEntry[]): GitStats | null {
     rebases,
     stashes,
     mostUsedGitCommand: mostUsed,
-    commitMessageSnippets: commitMessages.slice(0, 5),
   };
 }

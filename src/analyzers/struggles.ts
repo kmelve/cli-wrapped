@@ -65,7 +65,6 @@ const TYPO_PATTERNS: Array<{ typo: RegExp; correct: string }> = [
  */
 export function detectRageSudo(entries: HistoryEntry[]): Struggle | null {
   let count = 0;
-  const examples: string[] = [];
 
   for (let i = 1; i < entries.length; i++) {
     const prev = entries[i - 1];
@@ -78,9 +77,6 @@ export function detectRageSudo(entries: HistoryEntry[]): Struggle | null {
     // Check if current is "sudo <previous command>"
     if (currCmd.startsWith("sudo ") && currCmd.slice(5).trim() === prevCmd) {
       count++;
-      if (examples.length < 3) {
-        examples.push(prevCmd);
-      }
     }
   }
 
@@ -90,7 +86,6 @@ export function detectRageSudo(entries: HistoryEntry[]): Struggle | null {
     type: "rage-sudo",
     description: `You forgot sudo ${count} time${count === 1 ? "" : "s"} and had to retry`,
     count,
-    examples,
   };
 }
 
@@ -98,32 +93,25 @@ export function detectRageSudo(entries: HistoryEntry[]): Struggle | null {
  * Detect common typos
  */
 export function detectTypos(entries: HistoryEntry[]): Struggle[] {
-  const typoCounts = new Map<string, { count: number; examples: string[] }>();
+  const typoCounts = new Map<string, number>();
 
   for (const entry of entries) {
     const cmd = entry.command.trim();
 
     for (const { typo, correct } of TYPO_PATTERNS) {
       if (typo.test(cmd)) {
-        const key = correct;
-        const existing = typoCounts.get(key) ?? { count: 0, examples: [] };
-        existing.count++;
-        if (existing.examples.length < 3) {
-          existing.examples.push(cmd.slice(0, 30));
-        }
-        typoCounts.set(key, existing);
+        typoCounts.set(correct, (typoCounts.get(correct) ?? 0) + 1);
         break; // Only count once per entry
       }
     }
   }
 
   return [...typoCounts.entries()]
-    .filter(([, { count }]) => count >= 2)
-    .map(([correct, { count, examples }]) => ({
+    .filter(([, count]) => count >= 2)
+    .map(([correct, count]) => ({
       type: "typo" as const,
       description: `You mistyped "${correct}" ${count} time${count === 1 ? "" : "s"}`,
       count,
-      examples,
     }))
     .sort((a, b) => b.count - a.count);
 }
@@ -149,13 +137,11 @@ export function detectManPageChecks(entries: HistoryEntry[]): Struggle | null {
   if (repeated.length === 0) return null;
 
   const total = repeated.reduce((sum, [, count]) => sum + count, 0);
-  const topExamples = repeated.slice(0, 3).map(([cmd]) => cmd);
 
   return {
     type: "man-page-check",
     description: `You checked the manual ${total} time${total === 1 ? "" : "s"} for commands you've looked up before`,
     count: total,
-    examples: topExamples,
   };
 }
 
@@ -166,7 +152,6 @@ export function detectRepeatedFailures(entries: HistoryEntry[]): Struggle | null
   let streakCount = 0;
   let currentStreak = 1;
   let prevCmd = "";
-  const streakExamples: string[] = [];
 
   for (const entry of entries) {
     const cmd = entry.command.trim();
@@ -175,9 +160,6 @@ export function detectRepeatedFailures(entries: HistoryEntry[]): Struggle | null
       currentStreak++;
       if (currentStreak === 3) {
         streakCount++;
-        if (streakExamples.length < 3) {
-          streakExamples.push(cmd.slice(0, 40));
-        }
       }
     } else {
       currentStreak = 1;
@@ -192,7 +174,6 @@ export function detectRepeatedFailures(entries: HistoryEntry[]): Struggle | null
     type: "repeated-failure",
     description: `You ran the same command 3+ times in a row ${streakCount} time${streakCount === 1 ? "" : "s"} (hoping for a different result?)`,
     count: streakCount,
-    examples: streakExamples,
   };
 }
 

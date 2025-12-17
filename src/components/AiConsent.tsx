@@ -1,47 +1,13 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { homedir } from "os";
-import { join } from "path";
 
-const CONFIG_DIR = join(homedir(), ".cli-wrapped");
-const CONFIG_FILE = join(CONFIG_DIR, "config.json");
-
-interface Config {
-  apiKey?: string;
-}
-
-export function loadConfig(): Config {
-  try {
-    if (existsSync(CONFIG_FILE)) {
-      return JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) as Config;
-    }
-  } catch {
-    // Ignore errors
-  }
-  return {};
-}
-
-export function saveConfig(config: Config): void {
-  try {
-    if (!existsSync(CONFIG_DIR)) {
-      mkdirSync(CONFIG_DIR, { recursive: true });
-    }
-    writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-  } catch {
-    // Ignore errors
-  }
-}
-
+/**
+ * Check if API key is available from environment variable.
+ * API keys are NOT stored on disk for security reasons - only kept in memory.
+ */
 export function getApiKey(): string | undefined {
-  // Environment variable takes precedence
-  if (process.env.ANTHROPIC_API_KEY) {
-    return process.env.ANTHROPIC_API_KEY;
-  }
-  // Fall back to stored config
-  const config = loadConfig();
-  return config.apiKey;
+  return process.env.ANTHROPIC_API_KEY;
 }
 
 interface AiConsentProps {
@@ -107,8 +73,7 @@ export function AiConsent({ onChoice, hasApiKey }: AiConsentProps) {
       setError("Key should start with sk-ant-");
       return;
     }
-    // Save the key
-    saveConfig({ apiKey: trimmed });
+    // Key is kept in memory only for this session (not saved to disk)
     onChoice(true, trimmed);
   };
 
@@ -144,7 +109,7 @@ export function AiConsent({ onChoice, hasApiKey }: AiConsentProps) {
         </Box>
 
         <Box marginTop={1}>
-          <Text dimColor italic>Key will be saved to ~/.cli-wrapped/config.json</Text>
+          <Text dimColor italic>Key is used for this session only (not stored on disk)</Text>
         </Box>
       </Box>
     );
@@ -181,8 +146,9 @@ export function AiConsent({ onChoice, hasApiKey }: AiConsentProps) {
 
       <Box flexDirection="column" marginBottom={1} paddingLeft={2}>
         <Text color="green" bold>Privacy:</Text>
-        <Text>We only send <Text bold>statistics</Text> to Claude, never your actual commands.</Text>
-        <Text dimColor>Example: "top command: git (774 times)" — NOT the actual git commands.</Text>
+        <Text>We only send <Text bold>aggregate statistics</Text> to Claude.</Text>
+        <Text dimColor>Example: "git: 774 times" — never your actual commands or arguments.</Text>
+        <Text dimColor>No file paths, secrets, or commit messages are sent.</Text>
       </Box>
 
       {!hasApiKey && (

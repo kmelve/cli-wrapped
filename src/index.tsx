@@ -45,8 +45,8 @@ function InteractiveApp({ analysis, year, shell, hasApiKey, skipConsent, forceAI
     const effectiveHasKey = hasApiKey || !!runtimeApiKey;
     if (!enableAI || !effectiveHasKey) return;
 
-    // Use runtime key first, then stored key (if not in env)
-    const apiKeyToUse = runtimeApiKey || (!process.env.ANTHROPIC_API_KEY ? getApiKey() : undefined);
+    // Use runtime key if provided during this session, otherwise rely on env var
+    const apiKeyToUse = runtimeApiKey;
 
     setRoastLoading(true);
     generateRoasts(analysis, year, apiKeyToUse)
@@ -126,10 +126,8 @@ function StaticApp({ analysis, year, shell, hasApiKey, forceAI }: Omit<AppProps,
   useEffect(() => {
     if (!forceAI || !hasApiKey) return;
 
-    // Get API key from config if not in env
-    const storedKey = !process.env.ANTHROPIC_API_KEY ? getApiKey() : undefined;
-
-    generateRoasts(analysis, year, storedKey)
+    // API key comes from environment variable only
+    generateRoasts(analysis, year)
       .then((r) => {
         setRoasts(r);
         setRoastLoading(false);
@@ -166,13 +164,22 @@ Environment:
   ANTHROPIC_API_KEY   Set this for AI-powered roasts from Claude
                       Get one at https://console.anthropic.com/
 
-Privacy:
-  When AI roasts are enabled, we send ONLY statistics to Claude:
-  - Command names and counts (e.g., "git: 774 times")
-  - Time patterns (e.g., "peak hour: 2pm")
+Privacy & Security:
+  When AI roasts are enabled, we send ONLY aggregate statistics to Claude:
+  - Base command names and counts (e.g., "git: 774 times")
+  - Time patterns (e.g., "peak hour: 14:00")
   - Aggregate numbers (total commands, unique commands)
+  - Package manager usage percentages
+  - Git operation counts (commits, pushes, pulls)
 
-  We NEVER send your actual command arguments or history content.
+  We NEVER send:
+  ✗ Command arguments or flags
+  ✗ File paths or directory names
+  ✗ Commit messages
+  ✗ Environment variables or secrets
+  ✗ Your actual shell history content
+
+  API keys are kept in memory only - never written to disk.
 
 Navigation (interactive mode):
   SPACE / → / ENTER   Next screen

@@ -1,5 +1,5 @@
 import type { ParsedHistory, AnalysisResult } from "../types/index.ts";
-import { getTopCommands, countUniqueCommands, findLongestCommand } from "./commands.ts";
+import { getTopCommands, countUniqueCommands, findLongestCommandLength } from "./commands.ts";
 import {
   analyzeTimePatterns,
   analyzeDayPatterns,
@@ -33,7 +33,7 @@ export function analyzeHistory(history: ParsedHistory): AnalysisResult {
     struggles: analyzeStruggles(entries),
     gitStats: analyzeGitStats(entries),
     packageManagers: analyzePackageManagers(entries),
-    longestCommand: findLongestCommand(entries),
+    longestCommandLength: findLongestCommandLength(entries),
     mostActiveDate: findMostActiveDate(entries),
   };
 }

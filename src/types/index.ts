@@ -45,7 +45,7 @@ export interface Struggle {
   type: "rage-sudo" | "typo" | "repeated-failure" | "man-page-check";
   description: string;
   count: number;
-  examples?: string[];
+  // Note: examples intentionally omitted to prevent sensitive command data leakage
 }
 
 export interface GitStats {
@@ -57,7 +57,6 @@ export interface GitStats {
   rebases: number;
   stashes: number;
   mostUsedGitCommand: string;
-  commitMessageSnippets?: string[];
 }
 
 export interface PackageManagerStats {
@@ -78,6 +77,6 @@ export interface AnalysisResult {
   struggles: Struggle[];
   gitStats: GitStats | null;
   packageManagers: PackageManagerStats[];
-  longestCommand: string;
+  longestCommandLength: number;
   mostActiveDate: { date: string; count: number } | null;
 }

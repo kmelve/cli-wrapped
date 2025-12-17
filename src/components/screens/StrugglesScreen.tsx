@@ -40,11 +40,6 @@ export function StrugglesScreen({ analysis, roast, roastLoading, currentScreen, 
                 <Text>
                   {icon} <Text color="red">{struggle.description}</Text>
                 </Text>
-                {struggle.examples && struggle.examples.length > 0 && (
-                  <Text dimColor>
-                    {"\n   "}Example: {struggle.examples[0]}
-                  </Text>
-                )}
               </Box>
             );
           })}

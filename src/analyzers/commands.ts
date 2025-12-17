@@ -70,15 +70,14 @@ export function countUniqueCommands(entries: HistoryEntry[]): number {
 }
 
 /**
- * Find the longest command
+ * Find the length of the longest command (content not stored for privacy)
  */
-export function findLongestCommand(entries: HistoryEntry[]): string {
-  let longest = "";
+export function findLongestCommandLength(entries: HistoryEntry[]): number {
+  let maxLength = 0;
   for (const entry of entries) {
-    if (entry.command.length > longest.length) {
-      longest = entry.command;
+    if (entry.command.length > maxLength) {
+      maxLength = entry.command.length;
     }
   }
-  // Truncate for display
-  return longest.length > 100 ? longest.slice(0, 100) + "..." : longest;
+  return maxLength;
 }

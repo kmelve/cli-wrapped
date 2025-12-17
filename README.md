@@ -54,12 +54,12 @@ cli-wrapped [options]
 
 ### Options
 
-| Flag | Description |
-|------|-------------|
-| `--year=YYYY` | Analyze a specific year (default: current year) |
-| `--no-ai` | Skip AI-powered roasts (faster, no API key needed) |
-| `--static` | Force static mode (no interactive navigation) |
-| `--help, -h` | Show help message |
+| Flag          | Description                                        |
+| ------------- | -------------------------------------------------- |
+| `--year=YYYY` | Analyze a specific year (default: current year)    |
+| `--no-ai`     | Skip AI-powered roasts (faster, no API key needed) |
+| `--static`    | Force static mode (no interactive navigation)      |
+| `--help, -h`  | Show help message                                  |
 
 ### Examples
 
@@ -76,29 +76,41 @@ cli-wrapped --no-ai --static
 
 ### Navigation (Interactive Mode)
 
-| Key | Action |
-|-----|--------|
-| `SPACE` / `→` / `ENTER` | Next screen |
-| `←` / `BACKSPACE` | Previous screen |
-| `q` | Quit |
+| Key                     | Action          |
+| ----------------------- | --------------- |
+| `SPACE` / `→` / `ENTER` | Next screen     |
+| `←` / `BACKSPACE`       | Previous screen |
+| `q`                     | Quit            |
 
 ## AI-Powered Roasts
 
 When you run CLI Wrapped, you'll be asked if you want AI-powered roasts.
 
-### Privacy First
+### Privacy & Security
 
-**We only send statistics to Claude, never your actual commands.**
+**We only send aggregate statistics to Claude, never your actual commands.**
 
-What we send:
-- Command names and counts (e.g., "git: 774 times")
-- Time patterns (e.g., "peak hour: 2pm")
+✅ What we send:
+
+- Base command names and counts (e.g., "git: 774 times")
+- Time patterns (e.g., "peak hour: 14:00")
 - Aggregate numbers (total commands, unique commands)
+- Package manager usage percentages
+- Git operation counts (commits, pushes, pulls)
 
-What we **never** send:
-- Your actual command arguments
-- File paths or project names
-- Any history content beyond command names
+❌ What we **never** send:
+
+- Command arguments or flags
+- File paths, project names, or directory names
+- Commit messages
+- Environment variables or secrets
+- Any history content beyond base command names
+
+🔐 **Security measures:**
+
+- API keys are kept in memory only - never written to disk
+- All external data is explicitly sanitized through an allowlist
+- Analysis happens locally; only summaries leave your machine
 
 ### Setup
 
@@ -111,6 +123,7 @@ echo 'export ANTHROPIC_API_KEY=sk-ant-api03-xxxxx' >> ~/.zshrc
 ```
 
 Or skip the consent prompt:
+
 ```bash
 cli-wrapped --ai      # Enable AI directly
 cli-wrapped --no-ai   # Disable AI directly

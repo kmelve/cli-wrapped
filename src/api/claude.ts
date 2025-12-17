@@ -18,27 +18,83 @@ export interface Roasts {
   overall: string;
 }
 
-function buildPrompt(analysis: AnalysisResult, year: number): string {
-  const topCmds = analysis.topCommands
-    .slice(0, 5)
+/**
+ * SECURITY: Data structure that is safe to send to external APIs.
+ * This is an explicit allowlist of what can leave the user's machine.
+ * Only aggregate statistics - no actual command content or arguments.
+ */
+interface SafeExternalData {
+  totalCommands: number;
+  uniqueCommands: number;
+  topCommands: Array<{ command: string; count: number; percentage: number }>;
+  peakHour: number;
+  peakDay: string;
+  mostActiveDate: { date: string; count: number } | null;
+  struggles: Array<{ description: string; count: number }>;
+  gitStats: {
+    totalCommits: number;
+    totalPushes: number;
+    totalPulls: number;
+    mostUsedGitCommand: string;
+  } | null;
+  packageManagers: Array<{ manager: string; percentage: number }>;
+}
+
+/**
+ * SECURITY: Sanitize analysis results before sending to external API.
+ * Only extracts safe, aggregate statistics - no command arguments or content.
+ */
+function sanitizeForExternalAPI(analysis: AnalysisResult): SafeExternalData {
+  return {
+    totalCommands: analysis.totalCommands,
+    uniqueCommands: analysis.uniqueCommands,
+    // Only base command names (first word), counts, and percentages
+    topCommands: analysis.topCommands.slice(0, 5).map((c) => ({
+      command: c.command,
+      count: c.count,
+      percentage: c.percentage,
+    })),
+    peakHour: analysis.peakHour,
+    peakDay: analysis.peakDay,
+    mostActiveDate: analysis.mostActiveDate,
+    // Only descriptions (which are pre-constructed safe strings), no examples
+    struggles: analysis.struggles.slice(0, 3).map((s) => ({
+      description: s.description,
+      count: s.count,
+    })),
+    // Only aggregate git stats, no commit messages
+    gitStats: analysis.gitStats
+      ? {
+          totalCommits: analysis.gitStats.totalCommits,
+          totalPushes: analysis.gitStats.totalPushes,
+          totalPulls: analysis.gitStats.totalPulls,
+          mostUsedGitCommand: analysis.gitStats.mostUsedGitCommand,
+        }
+      : null,
+    // Only package manager names and percentages
+    packageManagers: analysis.packageManagers.slice(0, 2).map((p) => ({
+      manager: p.manager,
+      percentage: p.percentage,
+    })),
+  };
+}
+
+function buildPrompt(safeData: SafeExternalData, year: number): string {
+  const topCmds = safeData.topCommands
     .map((c) => `${c.command}: ${c.count} times (${c.percentage.toFixed(1)}%)`)
     .join("\n");
 
-  const struggles = analysis.struggles
-    .slice(0, 3)
-    .map((s) => s.description)
-    .join("\n");
+  const struggles = safeData.struggles.map((s) => s.description).join("\n");
 
-  const gitInfo = analysis.gitStats
-    ? `Commits: ${analysis.gitStats.totalCommits}, Pushes: ${analysis.gitStats.totalPushes}, Pulls: ${analysis.gitStats.totalPulls}, Favorite: ${analysis.gitStats.mostUsedGitCommand}`
+  const gitInfo = safeData.gitStats
+    ? `Commits: ${safeData.gitStats.totalCommits}, Pushes: ${safeData.gitStats.totalPushes}, Pulls: ${safeData.gitStats.totalPulls}, Favorite: ${safeData.gitStats.mostUsedGitCommand}`
     : "No git usage detected";
 
-  const pmInfo = analysis.packageManagers
-    .slice(0, 2)
+  const pmInfo = safeData.packageManagers
     .map((p) => `${p.manager}: ${p.percentage.toFixed(0)}%`)
     .join(", ");
 
-  const peakHour = analysis.peakHour;
+  const peakHour = safeData.peakHour;
   const timeDescription =
     peakHour >= 0 && peakHour < 6
       ? "late night/early morning (vampire hours)"
@@ -52,15 +108,15 @@ function buildPrompt(analysis: AnalysisResult, year: number): string {
 
 Here are their stats:
 
-TOTAL COMMANDS: ${analysis.totalCommands.toLocaleString()}
-UNIQUE COMMANDS: ${analysis.uniqueCommands.toLocaleString()}
+TOTAL COMMANDS: ${safeData.totalCommands.toLocaleString()}
+UNIQUE COMMANDS: ${safeData.uniqueCommands.toLocaleString()}
 
 TOP COMMANDS:
 ${topCmds}
 
 PEAK CODING TIME: ${peakHour}:00 (${timeDescription})
-PEAK DAY: ${analysis.peakDay}
-${analysis.mostActiveDate ? `MOST ACTIVE DAY: ${analysis.mostActiveDate.date} with ${analysis.mostActiveDate.count} commands` : ""}
+PEAK DAY: ${safeData.peakDay}
+${safeData.mostActiveDate ? `MOST ACTIVE DAY: ${safeData.mostActiveDate.date} with ${safeData.mostActiveDate.count} commands` : ""}
 
 STRUGGLES:
 ${struggles || "None detected (suspiciously clean...)"}
@@ -84,6 +140,9 @@ Generate exactly 7 roasts in this JSON format (no markdown, just raw JSON):
 }
 
 export async function generateRoasts(analysis: AnalysisResult, year: number, apiKey?: string): Promise<Roasts> {
+  // SECURITY: Sanitize data before sending to external API
+  const safeData = sanitizeForExternalAPI(analysis);
+
   const client = getClient(apiKey);
   const message = await client.messages.create({
     model: "claude-sonnet-4-20250514",
@@ -91,7 +150,7 @@ export async function generateRoasts(analysis: AnalysisResult, year: number, api
     messages: [
       {
         role: "user",
-        content: buildPrompt(analysis, year),
+        content: buildPrompt(safeData, year),
       },
     ],
   });

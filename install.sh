@@ -47,6 +47,7 @@ cd "$TEMP_DIR/cli-wrapped-main"
 echo -e "${GREEN}Installing dependencies...${NC}"
 bun install --silent
 
-# Run with TTY
+# Run with TTY - reconnect stdin/stdout to terminal
 echo ""
-exec bun run src/index.tsx "$@" </dev/tty
+exec </dev/tty
+exec bun run src/index.tsx "$@"

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import Spinner from "ink-spinner";
 import type { AnalysisResult } from "../../types/index.ts";
-import { generateShareImage } from "../../share/generateImage.tsx";
 
 interface Props {
   analysis: AnalysisResult;
@@ -21,7 +20,9 @@ export function SummaryScreen({ analysis, year, shell, headline, overallRoast }:
   useInput((input) => {
     if ((input === "s" || input === "S") && shareStatus === "idle") {
       setShareStatus("generating");
-      generateShareImage(analysis, year, shell, headline)
+      // Dynamic import to avoid loading heavy WASM deps at startup
+      import("../../share/generateImage.tsx")
+        .then(({ generateShareImage }) => generateShareImage(analysis, year, shell, headline))
         .then((path) => {
           setSavedPath(path);
           setShareStatus("done");

@@ -1,5 +1,12 @@
 import React from "react";
 import { Box, Text } from "ink";
+import Spinner from "ink-spinner";
+
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
 
 interface ScreenProps {
   title: string;
@@ -9,9 +16,21 @@ interface ScreenProps {
   roastLoading?: boolean;
   currentScreen: number;
   totalScreens: number;
+  shareStatus?: "idle" | "generating" | "done" | "error";
+  shareResult?: ShareResult | null;
 }
 
-export function Screen({ title, emoji, children, roast, roastLoading, currentScreen, totalScreens }: ScreenProps) {
+export function Screen({
+  title,
+  emoji,
+  children,
+  roast,
+  roastLoading,
+  currentScreen,
+  totalScreens,
+  shareStatus = "idle",
+  shareResult,
+}: ScreenProps) {
   return (
     <Box flexDirection="column" padding={1}>
       {/* Header */}
@@ -47,6 +66,38 @@ export function Screen({ title, emoji, children, roast, roastLoading, currentScr
         </Box>
       )}
 
+      {/* Share status */}
+      {shareStatus === "generating" && (
+        <Box marginTop={1}>
+          <Text color="blue">
+            <Spinner type="dots" /> Generating share image...
+          </Text>
+        </Box>
+      )}
+      {shareStatus === "done" && shareResult && (
+        <Box marginTop={1} flexDirection="column">
+          <Box>
+            {shareResult.copiedToClipboard ? (
+              <Text color="green">✓ Image copied to clipboard!</Text>
+            ) : (
+              <Text color="green">✓ Image saved!</Text>
+            )}
+            <Text dimColor> {shareResult.filepath}</Text>
+          </Box>
+          <Box marginTop={1} flexDirection="column">
+            <Text bold color="blue">Alt text:</Text>
+            <Box borderStyle="round" borderColor="gray" paddingX={1} marginTop={1}>
+              <Text wrap="wrap">{shareResult.altText}</Text>
+            </Box>
+          </Box>
+        </Box>
+      )}
+      {shareStatus === "error" && (
+        <Box marginTop={1}>
+          <Text color="red">✗ Failed to generate image</Text>
+        </Box>
+      )}
+
       {/* Footer */}
       <Box marginTop={1} flexDirection="column">
         <Text dimColor>
@@ -54,7 +105,7 @@ export function Screen({ title, emoji, children, roast, roastLoading, currentScr
         </Text>
         <Box justifyContent="space-between" marginTop={1}>
           <Text dimColor>
-            [{currentScreen}/{totalScreens}] Press <Text bold color="blue">SPACE</Text> or <Text bold color="blue">→</Text> to continue • <Text bold color="blue">q</Text> to quit
+            [{currentScreen}/{totalScreens}] <Text bold color="blue">SPACE</Text>/<Text bold color="blue">→</Text> next • <Text bold color="blue">s</Text> share • <Text bold color="blue">q</Text> quit
           </Text>
           <Text dimColor>
             {renderProgressDots(currentScreen, totalScreens)}

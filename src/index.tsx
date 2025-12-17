@@ -5,6 +5,7 @@ import { loadHistory, filterByYear } from "./parsers/index.ts";
 import { analyzeHistory } from "./analyzers/index.ts";
 import { generateRoasts, getFallbackRoasts, type Roasts } from "./api/claude.ts";
 import type { AnalysisResult } from "./types/index.ts";
+import type { ScreenType } from "./share/generateImage.tsx";
 
 // Components
 import { Intro } from "./components/Intro.tsx";
@@ -31,6 +32,24 @@ type ScreenName = "consent" | "intro" | "commands" | "time" | "struggles" | "git
 
 const SCREENS: ScreenName[] = ["consent", "intro", "commands", "time", "struggles", "git", "packages", "summary"];
 
+// Map screen names to share image screen types
+const SCREEN_TO_SHARE_TYPE: Record<ScreenName, ScreenType | null> = {
+  consent: null,
+  intro: null,
+  commands: "commands",
+  time: "time",
+  struggles: "struggles",
+  git: "git",
+  packages: "packages",
+  summary: "summary",
+};
+
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
+
 function InteractiveApp({ analysis, year, shell, hasApiKey, skipConsent, forceAI }: Omit<AppProps, "staticMode">) {
   const { exit } = useApp();
   const initialScreen: ScreenName = skipConsent ? "intro" : "consent";
@@ -39,6 +58,8 @@ function InteractiveApp({ analysis, year, shell, hasApiKey, skipConsent, forceAI
   const [runtimeApiKey, setRuntimeApiKey] = useState<string | undefined>(undefined);
   const [roasts, setRoasts] = useState<Roasts | null>(null);
   const [roastLoading, setRoastLoading] = useState(false);
+  const [shareStatus, setShareStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
+  const [shareResult, setShareResult] = useState<ShareResult | null>(null);
 
   // Load roasts when AI is enabled
   useEffect(() => {
@@ -60,6 +81,48 @@ function InteractiveApp({ analysis, year, shell, hasApiKey, skipConsent, forceAI
       });
   }, [analysis, year, enableAI, hasApiKey, runtimeApiKey]);
 
+  // Reset share status when changing screens
+  const navigateTo = (screen: ScreenName) => {
+    setShareStatus("idle");
+    setShareResult(null);
+    setCurrentScreen(screen);
+  };
+
+  // Get the roast for the current screen
+  const getRoastForScreen = (screen: ScreenName): string | undefined => {
+    if (!roasts) return undefined;
+    switch (screen) {
+      case "commands": return roasts.topCommands;
+      case "time": return roasts.timePatterns;
+      case "struggles": return roasts.struggles;
+      case "git": return roasts.gitActivity;
+      case "packages": return roasts.packageManager;
+      case "summary": return roasts.overall;
+      default: return undefined;
+    }
+  };
+
+  // Handle share action
+  const handleShare = () => {
+    const shareType = SCREEN_TO_SHARE_TYPE[currentScreen];
+    if (!shareType || shareStatus !== "idle") return;
+
+    const roast = getRoastForScreen(currentScreen);
+
+    setShareStatus("generating");
+    // Dynamic import to avoid loading heavy WASM deps at startup
+    import("./share/generateImage.tsx")
+      .then(({ generateShareImage }) => generateShareImage(analysis, year, shell, roasts?.headline, shareType, roast))
+      .then((result) => {
+        setShareResult(result);
+        setShareStatus("done");
+      })
+      .catch((err) => {
+        console.error(err);
+        setShareStatus("error");
+      });
+  };
+
   // Keyboard navigation
   useInput((input, key) => {
     if (currentScreen === "consent") return; // Consent handles its own input
@@ -69,17 +132,23 @@ function InteractiveApp({ analysis, year, shell, hasApiKey, skipConsent, forceAI
       return;
     }
 
+    // Handle share
+    if ((input === "s" || input === "S") && SCREEN_TO_SHARE_TYPE[currentScreen]) {
+      handleShare();
+      return;
+    }
+
     const currentIndex = SCREENS.indexOf(currentScreen);
 
     if (input === " " || key.rightArrow || key.return) {
       if (currentIndex < SCREENS.length - 1) {
-        setCurrentScreen(SCREENS[currentIndex + 1]!);
+        navigateTo(SCREENS[currentIndex + 1]!);
       }
     }
 
     if (key.leftArrow || key.backspace) {
       if (currentIndex > 2) { // Skip consent and intro on back
-        setCurrentScreen(SCREENS[currentIndex - 1]!);
+        navigateTo(SCREENS[currentIndex - 1]!);
       }
     }
   });
@@ -103,17 +172,17 @@ function InteractiveApp({ analysis, year, shell, hasApiKey, skipConsent, forceAI
     case "intro":
       return <Intro year={year} totalCommands={analysis.totalCommands} onComplete={handleIntroComplete} />;
     case "commands":
-      return <TopCommandsScreen analysis={analysis} roast={roasts?.topCommands} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} />;
+      return <TopCommandsScreen analysis={analysis} roast={roasts?.topCommands} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} shareStatus={shareStatus} shareResult={shareResult} />;
     case "time":
-      return <TimeScreen analysis={analysis} roast={roasts?.timePatterns} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} />;
+      return <TimeScreen analysis={analysis} roast={roasts?.timePatterns} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} shareStatus={shareStatus} shareResult={shareResult} />;
     case "struggles":
-      return <StrugglesScreen analysis={analysis} roast={roasts?.struggles} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} />;
+      return <StrugglesScreen analysis={analysis} roast={roasts?.struggles} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} shareStatus={shareStatus} shareResult={shareResult} />;
     case "git":
-      return <GitScreen analysis={analysis} roast={roasts?.gitActivity} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} />;
+      return <GitScreen analysis={analysis} roast={roasts?.gitActivity} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} shareStatus={shareStatus} shareResult={shareResult} />;
     case "packages":
-      return <PackageManagerScreen analysis={analysis} roast={roasts?.packageManager} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} />;
+      return <PackageManagerScreen analysis={analysis} roast={roasts?.packageManager} roastLoading={roastLoading} currentScreen={screenNumber} totalScreens={totalScreens} shareStatus={shareStatus} shareResult={shareResult} />;
     case "summary":
-      return <SummaryScreen analysis={analysis} year={year} shell={shell} headline={roasts?.headline} overallRoast={roasts?.overall} />;
+      return <SummaryScreen analysis={analysis} year={year} shell={shell} headline={roasts?.headline} overallRoast={roasts?.overall} shareStatus={shareStatus} shareResult={shareResult} />;
     default:
       return null;
   }

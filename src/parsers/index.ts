@@ -1,11 +1,14 @@
 import { existsSync, readFileSync } from "fs";
-import type { ParsedHistory, ShellType, ShellHistoryParser } from "../types/index.ts";
+import { homedir } from "os";
+import type { ParsedHistory, ShellType, ShellHistoryParser, HistoryEntry } from "../types/index.ts";
 import { ZshParser } from "./zsh.ts";
 import { BashParser } from "./bash.ts";
 import { FishParser } from "./fish.ts";
 
+const zshParser = new ZshParser();
+
 const parsers: Record<ShellType, ShellHistoryParser> = {
-  zsh: new ZshParser(),
+  zsh: zshParser,
   bash: new BashParser(),
   fish: new FishParser(),
 };
@@ -48,6 +51,51 @@ export function findHistoryFile(preferredShell?: ShellType): { shell: ShellType;
  */
 export function parseHistoryFile(filePath: string, shell: ShellType): ParsedHistory {
   const parser = parsers[shell];
+
+  // Handle zsh session history (macOS Terminal.app)
+  if (shell === "zsh" && filePath.endsWith("*.history")) {
+    const sessionFiles = zshParser.getSessionHistoryFiles();
+    const allEntries: HistoryEntry[] = [];
+
+    // Also check main history file
+    const mainHistory = `${homedir()}/.zsh_history`;
+    if (existsSync(mainHistory)) {
+      const content = readFileSync(mainHistory, "utf-8");
+      allEntries.push(...parser.parse(content));
+    }
+
+    // Parse all session files
+    for (const sessionFile of sessionFiles) {
+      try {
+        const content = readFileSync(sessionFile, "utf-8");
+        allEntries.push(...parser.parse(content));
+      } catch {
+        // Skip files we can't read
+      }
+    }
+
+    // Sort by timestamp and deduplicate
+    const seen = new Set<string>();
+    const uniqueEntries = allEntries
+      .sort((a, b) => {
+        if (!a.timestamp) return 1;
+        if (!b.timestamp) return -1;
+        return a.timestamp.getTime() - b.timestamp.getTime();
+      })
+      .filter(entry => {
+        const key = `${entry.timestamp?.getTime() ?? 0}-${entry.command}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+    return {
+      entries: uniqueEntries,
+      shell,
+      filePath: `${homedir()}/.zsh_sessions/ (merged)`,
+    };
+  }
+
   const content = readFileSync(filePath, "utf-8");
   const entries = parser.parse(content);
 

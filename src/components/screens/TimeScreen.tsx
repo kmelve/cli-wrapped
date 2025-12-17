@@ -4,15 +4,23 @@ import { Screen } from "../Screen.tsx";
 import { formatHour } from "../../analyzers/index.ts";
 import type { AnalysisResult } from "../../types/index.ts";
 
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
+
 interface Props {
   analysis: AnalysisResult;
   roast?: string;
   roastLoading?: boolean;
   currentScreen: number;
   totalScreens: number;
+  shareStatus?: "idle" | "generating" | "done" | "error";
+  shareResult?: ShareResult | null;
 }
 
-export function TimeScreen({ analysis, roast, roastLoading, currentScreen, totalScreens }: Props) {
+export function TimeScreen({ analysis, roast, roastLoading, currentScreen, totalScreens, shareStatus, shareResult }: Props) {
   const maxHourCount = Math.max(...analysis.timePatterns.map((t) => t.count));
   const peakHourFormatted = formatHour(analysis.peakHour);
 
@@ -37,6 +45,8 @@ export function TimeScreen({ analysis, roast, roastLoading, currentScreen, total
       roastLoading={roastLoading}
       currentScreen={currentScreen}
       totalScreens={totalScreens}
+      shareStatus={shareStatus}
+      shareResult={shareResult}
     >
       {/* Hourly distribution */}
       <Box flexDirection="column">

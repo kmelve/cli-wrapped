@@ -3,15 +3,23 @@ import { Box, Text } from "ink";
 import { Screen } from "../Screen.tsx";
 import type { AnalysisResult } from "../../types/index.ts";
 
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
+
 interface Props {
   analysis: AnalysisResult;
   roast?: string;
   roastLoading?: boolean;
   currentScreen: number;
   totalScreens: number;
+  shareStatus?: "idle" | "generating" | "done" | "error";
+  shareResult?: ShareResult | null;
 }
 
-export function GitScreen({ analysis, roast, roastLoading, currentScreen, totalScreens }: Props) {
+export function GitScreen({ analysis, roast, roastLoading, currentScreen, totalScreens, shareStatus, shareResult }: Props) {
   const { gitStats } = analysis;
 
   if (!gitStats) {
@@ -23,6 +31,8 @@ export function GitScreen({ analysis, roast, roastLoading, currentScreen, totalS
         roastLoading={roastLoading}
         currentScreen={currentScreen}
         totalScreens={totalScreens}
+        shareStatus={shareStatus}
+        shareResult={shareResult}
       >
         <Box flexDirection="column">
           <Text color="yellow">No git activity detected in your history.</Text>
@@ -48,6 +58,8 @@ export function GitScreen({ analysis, roast, roastLoading, currentScreen, totalS
       roastLoading={roastLoading}
       currentScreen={currentScreen}
       totalScreens={totalScreens}
+      shareStatus={shareStatus}
+      shareResult={shareResult}
     >
       {/* Main stats */}
       <Box flexDirection="column">

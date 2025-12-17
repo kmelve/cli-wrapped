@@ -1,4 +1,6 @@
 import { homedir } from "os";
+import { existsSync, readdirSync, statSync, readFileSync } from "fs";
+import { join } from "path";
 import type { HistoryEntry, ShellHistoryParser } from "../types/index.ts";
 
 /**
@@ -11,7 +13,58 @@ import type { HistoryEntry, ShellHistoryParser } from "../types/index.ts";
  */
 export class ZshParser implements ShellHistoryParser {
   getDefaultPath(): string {
-    return `${homedir()}/.zsh_history`;
+    // Check HISTFILE env var first
+    if (process.env.HISTFILE && existsSync(process.env.HISTFILE)) {
+      return process.env.HISTFILE;
+    }
+
+    // Standard location
+    const standardPath = `${homedir()}/.zsh_history`;
+    if (existsSync(standardPath)) {
+      const stats = statSync(standardPath);
+      // If the file has reasonable content, use it
+      if (stats.size > 100) {
+        return standardPath;
+      }
+    }
+
+    // macOS Terminal.app uses session-based history since Big Sur
+    // Check ~/.zsh_sessions/ for history files
+    const sessionsDir = `${homedir()}/.zsh_sessions`;
+    if (existsSync(sessionsDir)) {
+      try {
+        const files = readdirSync(sessionsDir)
+          .filter(f => f.endsWith(".history") || f.match(/^[A-F0-9-]+\.history$/i))
+          .map(f => join(sessionsDir, f))
+          .filter(f => existsSync(f));
+
+        if (files.length > 0) {
+          // Return a marker that we'll handle specially
+          return `${sessionsDir}/*.history`;
+        }
+      } catch {
+        // Ignore errors reading sessions dir
+      }
+    }
+
+    return standardPath;
+  }
+
+  /**
+   * Get all session history files for macOS Terminal.app
+   */
+  getSessionHistoryFiles(): string[] {
+    const sessionsDir = `${homedir()}/.zsh_sessions`;
+    if (!existsSync(sessionsDir)) return [];
+
+    try {
+      return readdirSync(sessionsDir)
+        .filter(f => f.endsWith(".history"))
+        .map(f => join(sessionsDir, f))
+        .filter(f => existsSync(f));
+    } catch {
+      return [];
+    }
   }
 
   parse(content: string): HistoryEntry[] {

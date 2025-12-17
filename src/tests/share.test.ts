@@ -49,15 +49,21 @@ function createMockAnalysis(): AnalysisResult {
 }
 
 describe("generateShareImage", () => {
-  const testFilePath = join(homedir(), "Downloads", "cli-wrapped-2025.png");
+  const testFilePath = join(homedir(), "Downloads", "cli-wrapped-2025-summary.png");
 
   afterAll(() => {
-    // Clean up test file
-    if (existsSync(testFilePath)) {
-      try {
-        unlinkSync(testFilePath);
-      } catch {
-        // Ignore cleanup errors
+    // Clean up test files (different screen types generate different files)
+    const filesToClean = [
+      testFilePath,
+      join(homedir(), "Downloads", "cli-wrapped-2025-commands.png"),
+    ];
+    for (const file of filesToClean) {
+      if (existsSync(file)) {
+        try {
+          unlinkSync(file);
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     }
   });
@@ -103,5 +109,15 @@ describe("generateShareImage", () => {
     expect(result.filepath).toBeDefined();
     expect(existsSync(result.filepath)).toBe(true);
     expect(result.altText).not.toContain("commits");
+  });
+
+  test("generates screen-specific images", async () => {
+    const analysis = createMockAnalysis();
+
+    const result = await generateShareImage(analysis, 2025, "zsh", undefined, "commands");
+
+    expect(result.filepath).toContain("cli-wrapped-2025-commands.png");
+    expect(existsSync(result.filepath)).toBe(true);
+    expect(result.altText).toContain("Top Commands");
   });
 });

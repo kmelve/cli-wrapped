@@ -3,15 +3,23 @@ import { Box, Text } from "ink";
 import { Screen } from "../Screen.tsx";
 import type { AnalysisResult } from "../../types/index.ts";
 
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
+
 interface Props {
   analysis: AnalysisResult;
   roast?: string;
   roastLoading?: boolean;
   currentScreen: number;
   totalScreens: number;
+  shareStatus?: "idle" | "generating" | "done" | "error";
+  shareResult?: ShareResult | null;
 }
 
-export function StrugglesScreen({ analysis, roast, roastLoading, currentScreen, totalScreens }: Props) {
+export function StrugglesScreen({ analysis, roast, roastLoading, currentScreen, totalScreens, shareStatus, shareResult }: Props) {
   const hasStruggles = analysis.struggles.length > 0;
 
   return (
@@ -22,6 +30,8 @@ export function StrugglesScreen({ analysis, roast, roastLoading, currentScreen, 
       roastLoading={roastLoading}
       currentScreen={currentScreen}
       totalScreens={totalScreens}
+      shareStatus={shareStatus}
+      shareResult={shareResult}
     >
       {hasStruggles ? (
         <Box flexDirection="column">

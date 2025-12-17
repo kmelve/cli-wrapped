@@ -1,7 +1,13 @@
-import React, { useState } from "react";
-import { Box, Text, useInput } from "ink";
+import React from "react";
+import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
 import type { AnalysisResult } from "../../types/index.ts";
+
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
 
 interface Props {
   analysis: AnalysisResult;
@@ -9,30 +15,13 @@ interface Props {
   shell: string;
   headline?: string;
   overallRoast?: string;
+  shareStatus?: "idle" | "generating" | "done" | "error";
+  shareResult?: ShareResult | null;
 }
 
-export function SummaryScreen({ analysis, year, shell, headline, overallRoast }: Props) {
+export function SummaryScreen({ analysis, year, shell, headline, overallRoast, shareStatus = "idle", shareResult }: Props) {
   const topCmd = analysis.topCommands[0];
   const topPM = analysis.packageManagers[0];
-  const [shareStatus, setShareStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
-  const [shareResult, setShareResult] = useState<{ filepath: string; copiedToClipboard: boolean; altText: string } | null>(null);
-
-  useInput((input) => {
-    if ((input === "s" || input === "S") && shareStatus === "idle") {
-      setShareStatus("generating");
-      // Dynamic import to avoid loading heavy WASM deps at startup
-      import("../../share/generateImage.tsx")
-        .then(({ generateShareImage }) => generateShareImage(analysis, year, shell, headline))
-        .then((result) => {
-          setShareResult(result);
-          setShareStatus("done");
-        })
-        .catch((err) => {
-          console.error(err);
-          setShareStatus("error");
-        });
-    }
-  });
 
   return (
     <Box flexDirection="column" padding={1}>

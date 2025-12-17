@@ -3,15 +3,23 @@ import { Box, Text } from "ink";
 import { Screen } from "../Screen.tsx";
 import type { AnalysisResult } from "../../types/index.ts";
 
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
+
 interface Props {
   analysis: AnalysisResult;
   roast?: string;
   roastLoading?: boolean;
   currentScreen: number;
   totalScreens: number;
+  shareStatus?: "idle" | "generating" | "done" | "error";
+  shareResult?: ShareResult | null;
 }
 
-export function TopCommandsScreen({ analysis, roast, roastLoading, currentScreen, totalScreens }: Props) {
+export function TopCommandsScreen({ analysis, roast, roastLoading, currentScreen, totalScreens, shareStatus, shareResult }: Props) {
   const maxCount = analysis.topCommands[0]?.count ?? 1;
 
   return (
@@ -22,6 +30,8 @@ export function TopCommandsScreen({ analysis, roast, roastLoading, currentScreen
       roastLoading={roastLoading}
       currentScreen={currentScreen}
       totalScreens={totalScreens}
+      shareStatus={shareStatus}
+      shareResult={shareResult}
     >
       <Box flexDirection="column">
         {analysis.topCommands.slice(0, 10).map((cmd, index) => {

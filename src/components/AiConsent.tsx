@@ -38,32 +38,45 @@ export function AiConsent({ onChoice, hasApiKey }: AiConsentProps) {
       setSelected((s) => Math.max(0, s - 1));
     }
     if (key.downArrow || input === "j") {
-      setSelected((s) => Math.min(hasApiKey ? 1 : 2, s + 1));
+      setSelected((s) => Math.min(1, s + 1));
     }
     if (key.return || input === " ") {
       handleSelect(selected);
     }
-    if (input === "y" || input === "Y") {
-      handleSelect(0);
-    }
-    if (input === "n" || input === "N") {
-      handleSelect(hasApiKey ? 1 : 2);
-    }
-    if ((input === "p" || input === "P") && !hasApiKey) {
-      handleSelect(1);
+    if (hasApiKey) {
+      if (input === "y" || input === "Y") {
+        handleSelect(0);
+      }
+      if (input === "n" || input === "N") {
+        handleSelect(1);
+      }
+    } else {
+      if (input === "p" || input === "P") {
+        handleSelect(0);
+      }
+      if (input === "n" || input === "N") {
+        handleSelect(1);
+      }
     }
   });
 
   const handleSelect = (option: number) => {
-    if (option === 0) {
-      // Yes, enable AI
-      onChoice(true);
-    } else if (option === 1 && !hasApiKey) {
-      // Paste key
-      setScreen("input-key");
+    if (hasApiKey) {
+      if (option === 0) {
+        // Yes, enable AI
+        onChoice(true);
+      } else {
+        // No AI
+        onChoice(false);
+      }
     } else {
-      // No AI
-      onChoice(false);
+      if (option === 0) {
+        // Paste key
+        setScreen("input-key");
+      } else {
+        // No AI
+        onChoice(false);
+      }
     }
   };
 
@@ -121,9 +134,8 @@ export function AiConsent({ onChoice, hasApiKey }: AiConsentProps) {
         { key: "N", label: "No, just show my stats", selected: selected === 1 },
       ]
     : [
-        { key: "Y", label: "Yes, add witty roasts", selected: selected === 0 },
-        { key: "P", label: "Paste API key", selected: selected === 1 },
-        { key: "N", label: "No, just show my stats", selected: selected === 2 },
+        { key: "P", label: "Paste API key", selected: selected === 0 },
+        { key: "N", label: "No, just show my stats", selected: selected === 1 },
       ];
 
   return (

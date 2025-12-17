@@ -4,15 +4,23 @@ import { Screen } from "../Screen.tsx";
 import { detectPackageManagerLoyalty } from "../../analyzers/index.ts";
 import type { AnalysisResult } from "../../types/index.ts";
 
+interface ShareResult {
+  filepath: string;
+  copiedToClipboard: boolean;
+  altText: string;
+}
+
 interface Props {
   analysis: AnalysisResult;
   roast?: string;
   roastLoading?: boolean;
   currentScreen: number;
   totalScreens: number;
+  shareStatus?: "idle" | "generating" | "done" | "error";
+  shareResult?: ShareResult | null;
 }
 
-export function PackageManagerScreen({ analysis, roast, roastLoading, currentScreen, totalScreens }: Props) {
+export function PackageManagerScreen({ analysis, roast, roastLoading, currentScreen, totalScreens, shareStatus, shareResult }: Props) {
   const loyalty = detectPackageManagerLoyalty(analysis.packageManagers);
 
   if (analysis.packageManagers.length === 0) {
@@ -24,6 +32,8 @@ export function PackageManagerScreen({ analysis, roast, roastLoading, currentScr
         roastLoading={roastLoading}
         currentScreen={currentScreen}
         totalScreens={totalScreens}
+        shareStatus={shareStatus}
+        shareResult={shareResult}
       >
         <Box flexDirection="column">
           <Text color="yellow">No package manager usage detected.</Text>
@@ -47,6 +57,8 @@ export function PackageManagerScreen({ analysis, roast, roastLoading, currentScr
       roastLoading={roastLoading}
       currentScreen={currentScreen}
       totalScreens={totalScreens}
+      shareStatus={shareStatus}
+      shareResult={shareResult}
     >
       {/* Bar chart */}
       <Box flexDirection="column">
